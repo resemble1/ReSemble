@@ -14,3 +14,5 @@ EPS_START = 0.95 #random>eps, use model, else random: start with highly random,
 EPS_END = 0.001
 EPS_DECAY = 100
 MEMORY_SIZE=3000
+
+HIDDEN_LAYER=20
