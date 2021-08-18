@@ -7,5 +7,6 @@ This repo contains code accompaning the manuscript, "ReSemble: Reinforced Ensemb
 * NVIDIA GPU
 
 ## Run Sample Dataset
-`cd ./ReSemble`
-`./run.sh`
+1. `cd ./ReSemble`
+2. `./run.sh`
+3. Model and output prefetching file are generated at dir `results`
