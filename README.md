@@ -14,7 +14,7 @@ This repo contains code accompaning the manuscript, "ReSemble: Reinforced Ensemb
 ## Customed Confuguration
 1. Hyperperameters are set in `./ReSemble/config.py`
 2. Input prefetchers number and type can be customed.
-  * Write your own prefetcher in ChampSim
+  * write your own prefetcher in ChampSim
   * generate the prefetching traces of multiple prefetchers using ChampSim
   * the prefetcher is classified as spatial and temporal, each is formed as a list of paths in the command as below, paths divided by ";":
   ```python ./ensemble_rl.py warm_up_instructions total_sim_instructions path_cache "path_spatial_prefetcher1;path_spatial_prefetcher2;..." "path_temporal_prefetcher1;path_temporal_prefetcher2;..." $model_save_path $prefetch_file_output_path```
