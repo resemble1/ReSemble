@@ -1,6 +1,6 @@
 #!/bin/bash
 WARM=20
-TOTAL=22
+TOTAL=40
 
 DATA="../data"
 RESULT="./results"
