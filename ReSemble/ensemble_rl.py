@@ -181,24 +181,7 @@ def convert_blk_n_hex(pred_addr_blk):
     res=int(int(pred_addr_blk)<<(BLOCK_BITS))
     res2=res.to_bytes(((res.bit_length() + 7) // 8),"big").hex().lstrip('0')
     return res2
-
-#%%
-'''
-WARM=2
-TOTAL=3
-path_cache="/home/pengmiao/Disk/work/HPCA/ML-DPC-S0/LoadTraces/spec17/623.xalancbmk-s0.txt.xz"
-path_bo="/home/pengmiao/Disk/work/HPCA/pref_trace/ALL_2_8/spec17/623.xalancbmk-s0.trace.xz.bo_file.txt"
-path_spp="/home/pengmiao/Disk/work/HPCA/pref_trace/ALL_2_8/spec17/623.xalancbmk-s0.trace.xz.spp_file.txt"
-path_isb="/home/pengmiao/Disk/work/HPCA/pref_trace/ALL_2_8/spec17/623.xalancbmk-s0.trace.xz.sisb_file.txt"     
-path_domino="/home/pengmiao/Disk/work/HPCA/pref_trace/ALL_2_8/spec17/623.xalancbmk-s0.trace.xz.domino_file.txt"
-
-model_save_path="/home/pengmiao/Disk/work/HPCA/2_RL/results/623.xalancbmk-s0.rl_model.pth"
-path_to_prefetch_file=model_save_path+".rl_20.csv"
-
-path_spatial=[path_bo, path_spp]
-path_temporal=[path_isb,path_domino]
-'''
-#%%
+  
 if __name__ == "__main__":   
     WARM=int(sys.argv[1])
     TOTAL=int(sys.argv[2])
@@ -227,29 +210,5 @@ if __name__ == "__main__":
     print ("saved")    
 
 
-    
-
-
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
     
     
