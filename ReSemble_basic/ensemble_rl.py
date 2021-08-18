@@ -28,6 +28,7 @@ EPS_START = cf.EPS_START #random>eps, use model, else random: start with highly 
 EPS_END = cf.EPS_END
 EPS_DECAY = cf.EPS_DECAY
 MEMORY_SIZE=cf.MEMORY_SIZE
+HIDDEN_LAYER=cf.HIDDEN_LAYER
 
 steps_done = 0
 
@@ -57,18 +58,18 @@ class DQN(nn.Module):
         super(DQN, self).__init__()
         self.input_d=input_d
         self.output_d=outputs
-        self.fc1 = nn.Linear(input_d, 10)  # 5*5 from image dimension
-        self.fc2 = nn.Linear(10, 20)
-        self.fc3 = nn.Linear(20, 5)
-        self.head = nn.Linear(5, outputs)
+        self.fc1 = nn.Linear(input_d, HIDDEN_LAYER)  # 5*5 from image dimension
+        #elf.fc2 = nn.Linear(10, 20)
+        #self.fc3 = nn.Linear(20, 5)
+        self.head = nn.Linear(HIDDEN_LAYER, outputs)
 
 
     def forward(self, x):
         x=x.view(-1,self.input_d)
         x = x.to(device)
         x = F.relu(self.fc1(x))
-        x = F.relu(self.fc2(x))
-        x = F.relu(self.fc3(x))
+        #x = F.relu(self.fc2(x))
+        #x = F.relu(self.fc3(x))
         return self.head(x.view(x.size(0), -1))
 
 def select_action(state,policy_net,n_actions):
@@ -225,30 +226,3 @@ if __name__ == "__main__":
     torch.save(target_net.state_dict(), model_save_path)
     print ("saved")    
 
-
-    
-
-
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
