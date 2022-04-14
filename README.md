@@ -1,5 +1,5 @@
 # ReSemble: Reinforced Ensemble Framework for Data Prefetching
-
+# Update for SC
 This repo contains code accompaning the manuscript, "ReSemble: Reinforced Ensemble Framework for Data Prefetching"
 ## Dependencies
 * python: 3.x
