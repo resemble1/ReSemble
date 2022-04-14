@@ -22,3 +22,5 @@ This repo contains code accompaning the manuscript, "ReSemble: Reinforced Ensemb
  ## Dataset and Simulator
  We use the dataset and simulator provided for ML Prefetching Competition, which is based on a modified ChampSim:
  * https://github.com/Quangmire/ChampSim
+
+DOI: 10.5281/zenodo.6462467 
