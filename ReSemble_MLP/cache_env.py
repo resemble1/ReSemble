@@ -1,19 +1,14 @@
 import math
 import random
 import numpy as np
-import matplotlib
-import matplotlib.pyplot as plt
 from collections import namedtuple, deque
 from itertools import count
-from PIL import Image
 import lzma
 import pandas as pd
 import torch
 import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
-import sys
-import os
 import config as cf
 
 BLOCK_BITS=cf.BLOCK_BITS
@@ -96,68 +91,82 @@ def read_prefetch_data(load_trace, num_prefetch_warmup_instructions=10,TOTAL_NUM
         return df[["id","addr_blk"]]
 
 
-def addr_hash(x):
+def addr_hash(x,norm=True):
     x=int(x)
     t = x^(x>>32); 
     result = (t^(t>>HASH_BITS)) & (2**HASH_BITS-1); 
-    return result/(2**HASH_BITS)
-
-def apply_state_spatial_norm(addr,pref):
+    if norm==False:
+        return result
+    else:
+        return result/(2**HASH_BITS)
+def apply_state_spatial_norm(addr,pref,norm=True):
     if pref==0:
         return 0 
+    elif norm==False:
+        return addr_hash(pref-addr,norm)
     else:
         return (pref-addr)/(2**PAGE_BITS)
 
-def apply_state_temporal_hash(addr,pref):
+def apply_state_temporal_hash(addr,pref,norm=True):
     if pref==0:
         return 0
     else:
-        return addr_hash(pref-addr)
-#%%
+        return addr_hash(pref-addr,norm)
+    
+
 class Cache(object):
-    def __init__(self, path_cache, path_spatial, path_temporal,warm_up=10,total=20 ):
+    def __init__(self, path_cache, path_bo, path_spp, path_isb,path_domino, warm_up=10,total=20, model_type="nn",context=True):#tab;nn
         super(Cache, self).__init__()
+        self.model_type=model_type
+        self.norm= True if model_type=="nn" else False
         self.pointer = 0
         self.state_pointer=0#<degree,e.g. degree=2, pp=0,1
-        self.pref_num=len(path_spatial)+len(path_temporal)
-        self.pref_s_num=len(path_spatial)
-        self.pref_t_num=len(path_temporal)
-        self.action_space=list(range(len(path_spatial)+len(path_temporal)+1))
+        self.action_space=['bo','spp', "isb","domino","np"]
         self.n_actions = len(self.action_space)
-        self.n_state = self.n_actions+1 #[s_addr,s_ip,s_bo,s_spp,s_isb,s_domino]
-        self.miss_trace=self._build_cache(path_cache, path_spatial,path_temporal,warm_up,total)
+        self.n_state = 6 if context==True else 4
+        #[s_addr,s_ip,s_bo,s_pp,s_isb,s_domino]
+        self.miss_trace=self._build_cache(path_cache, path_bo, path_spp, path_isb,path_domino,warm_up,total)
         self.miss_len=len(self.miss_trace)
         self.pref_que=[]
-        
-    def _build_cache(self,path_cache, path_spatial,path_temporal, warm_up,total):
-        df=read_load_trace_data(path_cache, warm_up,total)
-        
-        for i in range(len(path_spatial)):
-            df_pref=read_prefetch_data(path_spatial[i], warm_up, total)
-            df_pref.columns=["id",i]
-            df_pref[i]=df_pref[i].astype('Int64')
-            df=pd.merge(df,df_pref,on="id",how="left")
-            df=df.fillna(0)
-            df["s_%s"%i]=df.apply(lambda x: apply_state_spatial_norm(x["addr_blk"],x[i]),axis=1)
-            
-        for i in range(len(path_temporal)):
-            df_pref=read_prefetch_data(path_temporal[i], warm_up, total)
-            j=len(path_spatial)+i
-            df_pref.columns=["id",j]
-            df_pref[j]=df_pref[j].astype('Int64')
-            df=pd.merge(df,df_pref,on="id",how="left")
-            df=df.fillna(0)
-            df["s_%s"%j]=df.apply(lambda x: apply_state_temporal_hash(x["addr_blk"],x[j]),axis=1)
-        
-        #df=df_miss_trace.fillna(0)
-
-        df["s_addr"]=df.apply(lambda x: addr_hash(x["addr_blk"]),axis=1)
-        df["s_ip"]=df.apply(lambda x: addr_hash(x["ip"]),axis=1)
-        
-        df["state"]=df[["s_%i"%i for i in list(range(self.pref_num))]+['s_addr','s_ip']].values.tolist()
-
-        return df
     
+    def _build_cache(self,path_cache, path_bo, path_spp, path_isb,path_domino, warm_up,total):
+        df_miss_trace=read_load_trace_data(path_cache, warm_up,total)
+        df_bo=read_prefetch_data(path_bo, warm_up,total)
+        df_bo.columns=["id","bo"]
+        df_spp=read_prefetch_data(path_spp, warm_up,total)
+        df_spp.columns=["id","spp"]
+        df_isb=read_prefetch_data(path_isb, warm_up,total)
+        df_isb.columns=["id","isb"]
+        df_domino=read_prefetch_data(path_domino, warm_up,total)
+        df_domino.columns=["id","domino"]
+        
+        
+        pd_cac=pd.merge(df_miss_trace,df_bo,on="id",how="left")
+        pd_cac=pd.merge(pd_cac,df_spp,on="id",how="left")
+        pd_cac=pd.merge(pd_cac,df_isb,on="id",how="left")
+        pd_cac=pd.merge(pd_cac,df_domino,on="id",how="left")
+
+        
+        pd_cac["bo"]=pd_cac["bo"].astype('Int64')
+        pd_cac["spp"]=pd_cac["spp"].astype('Int64')
+        pd_cac["isb"]=pd_cac["isb"].astype('Int64')
+        pd_cac["domino"]=pd_cac["domino"].astype('Int64')
+        
+        df=pd_cac.fillna(0)
+        
+        df["s_bo"]=df.apply(lambda x: apply_state_spatial_norm(x["addr_blk"],x["bo"],self.norm),axis=1)
+        df["s_spp"]=df.apply(lambda x: apply_state_spatial_norm(x["addr_blk"],x["spp"],self.norm),axis=1)
+        df["s_isb"]=df.apply(lambda x: apply_state_temporal_hash(x["addr_blk"],x["isb"],self.norm),axis=1)
+        df["s_domino"]=df.apply(lambda x: apply_state_temporal_hash(x["addr_blk"],x["isb"],self.norm),axis=1)
+        if self.n_state == 6:
+            df["s_addr"]=df.apply(lambda x: addr_hash(x["addr_blk"],self.norm),axis=1)
+            df["s_ip"]=df.apply(lambda x: addr_hash(x["ip"],self.norm),axis=1)
+            df["state"]=df[['s_addr', 's_ip', 's_bo',"s_spp","s_isb","s_domino"]].values.tolist()
+        else:
+            df["state"]=df[['s_bo',"s_spp","s_isb","s_domino"]].values.tolist()
+        return df
+        
+
     def reset(self):
         self.pointer=0
         self.state_pointer=0
@@ -166,14 +175,14 @@ class Cache(object):
     @property
     def state(self):
         state_vec=self.miss_trace["state"][self.pointer:self.pointer+1].values[0]
-        state_t=torch.from_numpy(np.array(state_vec,dtype=np.float32))
-        return state_t
+        #state_t=torch.from_numpy(np.array(state_vec,dtype=np.int))
+        return state_vec if self.model_type=="tab" else torch.from_numpy(np.array(state_vec,dtype=np.float32))
     
     @property
     def next_state(self):
         state_vec=self.miss_trace["state"][self.state_pointer:self.state_pointer+1].values[0]
-        state_t=torch.from_numpy(np.array(state_vec,dtype=np.float32))
-        return state_t      
+        #state_t=torch.from_numpy(np.array(state_vec,dtype=np.float32))
+        return state_vec if self.model_type=="tab" else torch.from_numpy(np.array(state_vec,dtype=np.float32))
     
     def get_reward(self,curr_pref_addr):
         future_window = self.miss_trace["addr_blk"][self.pointer+LATENCY:self.pointer+LATENCY+WINDOW_SIZE+1].values
@@ -183,16 +192,24 @@ class Cache(object):
         else:
             reward = -1
         return reward
+        
     
     def step(self,action):
-        #todo: action->curr_pref_addr, curr_addr wrongly used now
         done=0
         curr_id=self.miss_trace["id"].values[self.pointer]
-        if action < self.pref_num:
-            pref=action
+        
+        if action == 0:
+            pref ="bo"
+        elif action == 1:
+            pref = "spp"
+        elif action == 2:
+            pref = "isb"
+        elif action == 3:
+            pref = "domino"
         else:
             pref = "np"
-
+        
+        #pref=action
         if pref != "np":
             curr_pref_addr=self.miss_trace[pref].values[self.pointer]
             reward=self.get_reward(curr_pref_addr)

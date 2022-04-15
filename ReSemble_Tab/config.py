@@ -1,0 +1,26 @@
+#ENVIRONMENT
+BLOCK_BITS=6
+PAGE_BITS=6
+HASH_BITS=8
+WINDOW_SIZE=10000
+LATENCY=0
+PREFETCH_QUE_SIZE=10
+
+ACTION=['bo','spp', "isb","domino","np"]
+N_ACTION=len(ACTION)
+
+
+#LEARNING
+
+BATCH_SIZE = 256
+GAMMA = 0.999 # forget index
+EPS_START = 0.95 #random>eps, use model, else random: start with highly random,
+EPS_END = 0.001
+EPS_DECAY = 80
+MEMORY_SIZE=2000
+
+POLICY_OPTIM_STEPS=1
+TARGET_OPTIM_STEPS=20
+ALPHA=0.2
+
+EPISOD=1000

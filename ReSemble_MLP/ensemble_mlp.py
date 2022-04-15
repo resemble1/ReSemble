@@ -1,11 +1,8 @@
 import math
 import random
 import numpy as np
-import matplotlib
-import matplotlib.pyplot as plt
 from collections import namedtuple, deque
 from itertools import count
-from PIL import Image
 import lzma
 import pandas as pd
 import torch
@@ -17,10 +14,10 @@ from tqdm import tqdm
 import sys
 import os
 import config as cf
+import pickle
+os.environ['CUDA_VISIBLE_DEVICES'] = '2'#'2 in tarim'
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-device = cf.device
-
-#device="cpu"
 BLOCK_BITS=cf.BLOCK_BITS
 BATCH_SIZE = cf.BATCH_SIZE
 GAMMA = cf.GAMMA # forget index
@@ -28,11 +25,13 @@ EPS_START = cf.EPS_START #random>eps, use model, else random: start with highly 
 EPS_END = cf.EPS_END
 EPS_DECAY = cf.EPS_DECAY
 MEMORY_SIZE=cf.MEMORY_SIZE
-HIDDEN_LAYER=cf.HIDDEN_LAYER
+POLICY_OPTIM_STEPS=cf.POLICY_OPTIM_STEPS
+TARGET_OPTIM_STEPS=cf.TARGET_OPTIM_STEPS
+EPISOD=cf.EPISOD
 
+
+#%%
 steps_done = 0
-
-
 Transition = namedtuple('Transition',
                         ('state', 'action', 'next_state', 'reward'))
 
@@ -58,18 +57,18 @@ class DQN(nn.Module):
         super(DQN, self).__init__()
         self.input_d=input_d
         self.output_d=outputs
-        self.fc1 = nn.Linear(input_d, HIDDEN_LAYER)  # 5*5 from image dimension
-        #elf.fc2 = nn.Linear(10, 20)
-        #self.fc3 = nn.Linear(20, 5)
-        self.head = nn.Linear(HIDDEN_LAYER, outputs)
+        self.fc1 = nn.Linear(input_d, 10)  # 5*5 from image dimension
+        self.fc2 = nn.Linear(10, 20)
+        self.fc3 = nn.Linear(20, 5)
+        self.head = nn.Linear(5, outputs)
 
 
     def forward(self, x):
         x=x.view(-1,self.input_d)
         x = x.to(device)
         x = F.relu(self.fc1(x))
-        #x = F.relu(self.fc2(x))
-        #x = F.relu(self.fc3(x))
+        x = F.relu(self.fc2(x))
+        x = F.relu(self.fc3(x))
         return self.head(x.view(x.size(0), -1))
 
 def select_action(state,policy_net,n_actions):
@@ -134,15 +133,14 @@ def optimize_model(memory,policy_net):
     for param in policy_net.parameters():
         param.grad.data.clamp_(-1, 1)
     optimizer.step()
-    
+
 def rl_train(cache,memory,policy_net,target_net,model_save_path):
     pref_action_dict={"id":[],"action":[],"rl":[]}
     n_pref_list=[]
-    n_pref=np.array([0,0,0,0,0])
     reward_list=[]
-    num_episodes=30
-    policy_optim=20
-    target_update=1000
+    n_pref=np.array([0,0,0,0,0])
+    policy_optim=POLICY_OPTIM_STEPS
+    target_update=TARGET_OPTIM_STEPS
     
     cache.reset()#?cache.reset()#?
     reward_total=0
@@ -154,6 +152,7 @@ def rl_train(cache,memory,policy_net,target_net,model_save_path):
         #new state
         reward_old=reward_total
         next_state, reward, done, curr_id, curr_pref_addr = cache.step(action.item())
+        reward_total+=reward
         reward = torch.tensor([reward], device=device)
         pref_action_dict["id"].extend([curr_id])
         pref_action_dict["action"].extend([action.item()])
@@ -163,36 +162,50 @@ def rl_train(cache,memory,policy_net,target_net,model_save_path):
         
         if t % policy_optim == 0:
             optimize_model(memory,policy_net)
-    
+            
     # Update the target network, copying all weights and biases in DQN
         if t % target_update == 0:
             target_net.load_state_dict(policy_net.state_dict())
             torch.save(target_net.state_dict(), model_save_path)
-            reward_list.append(reward_total + 1)
-            #n_pref_list.append(n_pref_norm)
-            reward_total=0
+
+        if t%EPISOD==0:
+                if t==0:
+                    n_pref=np.array([0.2,0.2,0.2,0.2,0.2])
+                n_pref_list.append((n_pref/sum(n_pref)).copy())
+                #n_pref_list.append((n_pref).copy())
+                n_pref=np.array([0,0,0,0,0])
+                reward_list.append(reward_total + 1)
+                reward_total=0
+            
         if done:
-            target_net.load_state_dict(policy_net.state_dict())
             break    
     
-    return pref_action_dict,target_net
+    return reward_list,n_pref_list, pref_action_dict,target_net
 
 def convert_blk_n_hex(pred_addr_blk):
     res=int(int(pred_addr_blk)<<(BLOCK_BITS))
     res2=res.to_bytes(((res.bit_length() + 7) // 8),"big").hex().lstrip('0')
     return res2
-  
+
+#%%
+
 if __name__ == "__main__":   
+    
     WARM=int(sys.argv[1])
     TOTAL=int(sys.argv[2])
-    path_cache=sys.argv[3]
-    path_spatial=sys.argv[4].split(";")
-    path_temporal=sys.argv[5].split(";")
-    model_save_path=sys.argv[6]
-    path_to_prefetch_file=sys.argv[7]
     
-    cache = Cache(path_cache, path_spatial, path_temporal, WARM,TOTAL)
-    steps_done = 0
+    path_cache=sys.argv[3]
+    path_bo=sys.argv[4]
+    path_spp=sys.argv[5]
+    path_isb=sys.argv[6]
+    path_domino=sys.argv[7]
+    model_save_path=sys.argv[8]
+    path_to_prefetch_file=sys.argv[9]
+    path_to_stats=sys.argv[10]
+
+    cache = Cache(path_cache, path_bo, path_spp, path_isb,path_domino, WARM,TOTAL,model_type="nn",context=False)
+    
+    print("ReSemble: MLP")
     memory = ReplayMemory(MEMORY_SIZE)
     policy_net = DQN(cache.n_state, cache.n_actions).to(device)
     target_net = DQN(cache.n_state, cache.n_actions).to(device)
@@ -200,15 +213,21 @@ if __name__ == "__main__":
     target_net.eval()
     optimizer = optim.RMSprop(policy_net.parameters())
     
-    pref_action_dict,target_net=rl_train(cache,memory,policy_net,target_net,model_save_path)
+    print("Online updating...")
+    reward_list,n_pref_list,pref_action_dict,target_net=rl_train(cache,memory,policy_net,target_net,model_save_path)
     
+
+    df_list=pd.DataFrame(n_pref_list,columns=cf.ACTION)
+    df_list["reward"]=reward_list
+    df_list["Steps"]=[i*EPISOD for i in range(len(n_pref_list))]
+    df_list.to_csv(path_to_stats,header=1, index=False,sep=",")
+    print ("Rewards and proportions saved at:",path_to_stats)
+
     df=pd.DataFrame(pref_action_dict)
     df["rl_hex"]=df.apply(lambda x: convert_blk_n_hex(x["rl"]),axis=1)
-    #df.to_csv(path_to_prefetch_file,header=False, index=False, sep=" ")
-    df[["id","action","rl_hex"]].to_csv(path_to_prefetch_file,header=0, index=False, sep=" ")
+    df_pref=df[["id","rl_hex"]]
+    df_pref=df_pref[df_pref["rl_hex"]!=""]
+    df_pref.to_csv(path_to_prefetch_file,header=False, index=False, sep=" ")
+    print("Prefetching file generated at:", path_to_prefetch_file)
     torch.save(target_net.state_dict(), model_save_path)
-    print ("saved")    
-
-
-    
-    
+    print ("model saved at:", path_to_prefetch_file)
