@@ -29,6 +29,7 @@ We implemented MLP-based ReSemble model and a tabular variant. Scripts for demos
   * write your own prefetcher in ChampSim
   * generate the prefetching traces of multiple prefetchers using ChampSim
   * generate ReSemble prefetching results using the command as below:
+  
   ```python ./ensemble_rl.py warm_up_instructions total_sim_instructions path_cache path_spatial_prefetcher1 path_spatial_prefetcher2 path_temporal_prefetcher1 path_temporal_prefetcher2 model_save_path prefetch_file_output_path rewards_output_path```
  
  ## Dataset and Simulator
