@@ -1,6 +1,7 @@
 # ReSemble: Reinforced Ensemble Framework for Data Prefetching
 # Update for SC
 This repo contains code accompanying the manuscript, "ReSemble: Reinforced Ensemble Framework for Data Prefetching"
+[![DOI](https://zenodo.org/badge/394989763.svg)](https://zenodo.org/badge/latestdoi/394989763)
 ## Dependencies
 * python: 3.x
 * Pytorch: 0.4+
@@ -35,3 +36,4 @@ We implemented MLP-based ReSemble model and a tabular variant. Scripts for demos
  ## Dataset and Simulator
  We use the dataset and simulator provided for ML Prefetching Competition, which is based on a modified ChampSim:
  * https://github.com/Quangmire/ChampSim
+ 
