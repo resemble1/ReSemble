@@ -1,0 +1,50 @@
+name: sc22
+channels:
+  - defaults
+dependencies:
+  - _libgcc_mutex=0.1=main
+  - _openmp_mutex=4.5=1_gnu
+  - blas=1.0=mkl
+  - bottleneck=1.3.4=py38hce1f21e_0
+  - ca-certificates=2022.3.29=h06a4308_0
+  - certifi=2021.10.8=py38h06a4308_2
+  - cffi=1.15.0=py38hd667e15_1
+  - colorama=0.4.4=pyhd3eb1b0_0
+  - future=0.18.2=py38_1
+  - intel-openmp=2021.4.0=h06a4308_3561
+  - ld_impl_linux-64=2.35.1=h7274673_9
+  - libffi=3.3=he6710b0_2
+  - libgcc-ng=9.3.0=h5101ec6_17
+  - libgomp=9.3.0=h5101ec6_17
+  - libstdcxx-ng=9.3.0=hd4cf53a_17
+  - mkl=2021.4.0=h06a4308_640
+  - mkl-service=2.4.0=py38h7f8727e_0
+  - mkl_fft=1.3.1=py38hd3c417c_0
+  - mkl_random=1.2.2=py38h51133e4_0
+  - ncurses=6.3=h7f8727e_2
+  - ninja=1.10.2=py38hd09550d_3
+  - numexpr=2.8.1=py38h6abb31d_0
+  - numpy=1.21.5=py38he7a7128_1
+  - numpy-base=1.21.5=py38hf524024_1
+  - openssl=1.1.1n=h7f8727e_0
+  - packaging=21.3=pyhd3eb1b0_0
+  - pandas=1.4.1=py38h295c915_1
+  - pip=21.2.4=py38h06a4308_0
+  - pycparser=2.21=pyhd3eb1b0_0
+  - pyparsing=3.0.4=pyhd3eb1b0_0
+  - python=3.8.13=h12debd9_0
+  - python-dateutil=2.8.2=pyhd3eb1b0_0
+  - pytorch=1.10.2=cpu_py38hfa7516b_0
+  - pytz=2021.3=pyhd3eb1b0_0
+  - readline=8.1.2=h7f8727e_1
+  - setuptools=61.2.0=py38h06a4308_0
+  - six=1.16.0=pyhd3eb1b0_1
+  - sqlite=3.38.2=hc218d9a_0
+  - tk=8.6.11=h1ccaba5_0
+  - tqdm=4.63.0=pyhd3eb1b0_0
+  - typing-extensions=4.1.1=hd3eb1b0_0
+  - typing_extensions=4.1.1=pyh06a4308_0
+  - wheel=0.37.1=pyhd3eb1b0_0
+  - xz=5.2.5=h7b6447c_0
+  - zlib=1.2.11=h7f8727e_4
+prefix: /home/pengmiao/anaconda3/envs/sc22
